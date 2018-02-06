@@ -13,7 +13,7 @@ class S extends WidgetsLocalizations {
   }
 
   static final GeneratedLocalizationsDelegate delegate =
-  new GeneratedLocalizationsDelegate();
+      new GeneratedLocalizationsDelegate();
 
   static S of(BuildContext context) {
     var s = Localizations.of<S>(context, WidgetsLocalizations);
@@ -24,6 +24,7 @@ class S extends WidgetsLocalizations {
   @override
   TextDirection get textDirection => TextDirection.ltr;
 
+  String get sign_in => "Sign In";
 }
 
 class en extends S {

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import '../base/loading_state.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/authentication.dart';
 
 class SignIn extends StatefulWidget {
   @override
   State createState() => new SignInState();
 }
 
-class SignInState extends State<SignIn> {
+class SignInState extends LoadingBaseState<SignIn> {
   String _signin = "Sign In";
   String _signup = "Sign up";
   String _alreadyHaveAccount = "Already have account?";
@@ -16,10 +20,17 @@ class SignInState extends State<SignIn> {
   final TextEditingController _passController = new TextEditingController();
   final TextEditingController _confirmPassController = new TextEditingController();
 
+
   @override
-  Widget build(BuildContext context) => new Scaffold(
-        appBar: new AppBar(title: new Text(getLabel())),
-    body: new Center(
+  void initState() {
+    super.initState();
+    title = getLabel();
+  }
+
+  @override
+  Widget content(){
+    setState(()=>title = getLabel());
+    return new Center(
       // Center is a layout widget. It takes a single child and positions it
       // in the middle of the parent.
       child: new Column(
@@ -33,12 +44,12 @@ class SignInState extends State<SignIn> {
           toggleSignState()
         ],
       ),
-    ),
-      );
+    );
+  }
 
   Widget buildEmailTextField() => new Container(
     alignment: new Alignment(0.5, 0.5),
-    height: 30.0,
+    height: 36.0,
     margin: const EdgeInsets.only(left: 16.0,right: 16.0,bottom: 16.0),
     padding: const EdgeInsets.symmetric(horizontal: 8.0),
         decoration:
@@ -53,7 +64,7 @@ class SignInState extends State<SignIn> {
 
   Widget buildPasswordTextField(BuildContext context) => new Container(
         alignment: new Alignment(0.5, 0.5),
-        height: 30.0,
+        height: 36.0,
         margin: const EdgeInsets.only(left: 16.0,right: 16.0,bottom: 16.0),
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         decoration:
@@ -69,7 +80,7 @@ class SignInState extends State<SignIn> {
 
   Widget buildConfirmPassTextField() => new Container(
     alignment: new Alignment(0.5, 0.5),
-    height: 30.0,
+    height: 36.0,
     margin: const EdgeInsets.only(left: 16.0,right: 16.0,bottom: 16.0),
     padding: const EdgeInsets.symmetric(horizontal: 8.0),
     decoration:
@@ -104,11 +115,66 @@ class SignInState extends State<SignIn> {
       ));
 
   void _confirmPressed() {
-    
+    String p = r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
+    var email = _emailController.text;
+    RegExp exp = new RegExp(p);
+    if(!exp.hasMatch(email)){
+      AlertDialog dialog = new AlertDialog(
+        title: new Text("Email is not valid"),
+        actions: <Widget>[
+          new FlatButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
+        ],
+      );
+      showDialog(context: context, child: dialog);
+      return;
+    }
+    var pass = _passController.text;
+    if(pass.length<6){
+      AlertDialog dialog = new AlertDialog(
+        title: new Text("Password is too short"),
+        actions: <Widget>[
+          new FlatButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
+        ],
+      );
+      showDialog(context: context, child: dialog);
+      return;
+    }
+    var confirmPass = _confirmPassController.text;
+    if(signState == SignState.SIGNUP){
+      if(confirmPass != pass){
+        AlertDialog dialog = new AlertDialog(
+          title: new Text("Passwords didn't match"),
+          actions: <Widget>[
+            new FlatButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
+          ],
+        );
+        showDialog(context: context, child: dialog);
+        return;
+      }
+    }
+    _emailController.clear();
+    _passController.clear();
+    _confirmPassController.clear();
+    setState(()=>isLoading = true);
+    auth(email, pass).then((user) {
+     //TODO navigate to personal data
+    }).catchError((e) {
+      AlertDialog dialog = new AlertDialog(
+        title: new Text("Auth error!"),
+        actions: <Widget>[
+          new FlatButton(
+              onPressed: () => Navigator.pop(context), child: const Text('OK'))
+        ],
+      );
+      showDialog(context: context, child: dialog);
+    });
   }
 
   void _toggleSignState() {
-    setState(()=>signState = signState == SignState.SIGNIN?SignState.SIGNUP:SignState.SIGNIN);
+    setState((){
+      signState = signState == SignState.SIGNIN?SignState.SIGNUP:SignState.SIGNIN;
+      title = getLabel();
+    });
   }
 
   String getLabel(){
@@ -121,6 +187,17 @@ class SignInState extends State<SignIn> {
 
   String message(){
     return signState == SignState.SIGNIN?_haveNoAccount:_alreadyHaveAccount;
+  }
+
+  Future<FirebaseUser> auth(String email, String password){
+    Future<FirebaseUser> user;
+    if(signState == SignState.SIGNIN){
+      user = new UserAuth().verifyUser(new UserData(email: email,password: password));
+    }
+    else{
+      user = new UserAuth().createUser(new UserData(email: email,password: password));
+    }
+    return user;
   }
 }
 

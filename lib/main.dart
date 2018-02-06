@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_making_hands_dirty/signin.dart';
+import 'package:flutter_making_hands_dirty/screens/signin.dart';
+import 'screens/welcome.dart';
 import 'package:flutter_making_hands_dirty/generated/i18n.dart';
 
 void main() => runApp(new MyApp());
@@ -21,7 +22,10 @@ class MyApp extends StatelessWidget {
         // counter didn't reset back to zero; the application is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: new SignIn(),
+      home: new Welcome(),
+      routes:  <String, WidgetBuilder> {
+        "/signin": (BuildContext context) => new SignIn()
+      },
     );
   }
 }
